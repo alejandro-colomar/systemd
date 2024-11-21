@@ -527,9 +527,8 @@ int merge_gid_lists(const gid_t *list1, size_t size1, const gid_t *list2, size_t
 }
 
 int getgroups_alloc(gid_t** gids) {
-        unsigned attempt = 0;
-
-        for (;;) {
+        /* Give up eventually */
+        for (unsigned i = 0; i < 10; i++) {
                 _cleanup_free_  gid_t *p = NULL;
                 int ngroups;
 
@@ -550,11 +549,8 @@ int getgroups_alloc(gid_t** gids) {
                 }
                 if (errno != EINVAL)
                         return -errno;
-
-                /* Give up eventually */
-                if (attempt++ > 10)
-                        return -EINVAL;
         }
+        return -EINVAL;
 }
 
 int get_home_dir(char **ret) {
