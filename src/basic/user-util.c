@@ -527,11 +527,17 @@ int merge_gid_lists(const gid_t *list1, size_t size1, const gid_t *list2, size_t
 }
 
 int getgroups_alloc(gid_t** gids) {
-        int ngroups = 8;
         unsigned attempt = 0;
 
         for (;;) {
                 _cleanup_free_  gid_t *p = NULL;
+                int ngroups;
+
+                /* Get actual size needed, and size the array explicitly. Note that this is potentially racy
+                 * to use (in multi-threaded programs), hence let's call this in a loop. */
+                ngroups = getgroups(0, NULL);
+                if (ngroups < 0)
+                        return -errno;
 
                 p = new(gid_t, ngroups);
                 if (!p)
@@ -548,12 +554,6 @@ int getgroups_alloc(gid_t** gids) {
                 /* Give up eventually */
                 if (attempt++ > 10)
                         return -EINVAL;
-
-                /* Get actual size needed, and size the array explicitly. Note that this is potentially racy
-                 * to use (in multi-threaded programs), hence let's call this in a loop. */
-                ngroups = getgroups(0, NULL);
-                if (ngroups < 0)
-                        return -errno;
         }
 }
 
